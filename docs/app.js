@@ -2,12 +2,13 @@ import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.6.0/bundle.
 
 // ---- Personalize this page by editing the values below ----
 const CONFIG = {
-  title: "Firmware Flasher",
+  title: "Firmware Flasher by Gramps",
   subtitle: "Flash your device straight from this page. No software to install.",
   footerNote: 'Built with <a href="https://github.com/espressif/esptool-js" target="_blank" rel="noopener">esptool-js</a>.',
 };
 // -------------------------------------------------------------
 
+document.title = CONFIG.title;
 document.getElementById("pageTitle").textContent = CONFIG.title;
 document.getElementById("pageSubtitle").textContent = CONFIG.subtitle;
 document.getElementById("footerNote").innerHTML = CONFIG.footerNote;
