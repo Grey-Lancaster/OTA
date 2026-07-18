@@ -4,7 +4,7 @@
     {
       "name": "flasher-static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "4321"],
+      "runtimeArgs": ["-m", "http.server", "4321", "-d", "docs"],
       "port": 4321
     }
   ]
