@@ -34,8 +34,8 @@ body {
 }
 
 .hero-icon {
-  width: 50px;
-  height: 50px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   margin-bottom: 12px;
   box-shadow: 0 0 0 1px var(--panel-border);
