@@ -34,9 +34,11 @@ body {
 }
 
 .hero-icon {
-  font-size: 40px;
-  line-height: 1;
-  margin-bottom: 8px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin-bottom: 12px;
+  box-shadow: 0 0 0 1px var(--panel-border);
 }
 
 .hero h1 {
