@@ -52,6 +52,14 @@ let esploader = null;
 let device = null;
 let logTransport = null;
 let logStreamClosed = true;
+let autoLogTimer = null;
+
+function cancelAutoLogTimer() {
+  if (autoLogTimer) {
+    clearTimeout(autoLogTimer);
+    autoLogTimer = null;
+  }
+}
 
 function logLine(str) {
   els.log.textContent += str + "\n";
@@ -147,6 +155,7 @@ els.connectBtn.disabled = false;
 els.connectBtn.addEventListener("click", async () => {
   try {
     els.connectBtn.disabled = true;
+    cancelAutoLogTimer();
 
     if (logTransport) {
       await stopLogStream();
@@ -183,6 +192,7 @@ els.connectBtn.addEventListener("click", async () => {
 // --- Flash ---
 els.flashBtn.addEventListener("click", async () => {
   if (!firmwareData || !esploader) return;
+  cancelAutoLogTimer();
 
   let address;
   try {
@@ -251,9 +261,13 @@ els.flashBtn.addEventListener("click", async () => {
     els.connectBtn.textContent = "Connect Device";
 
     // Give the board a moment to actually boot, then jump straight to
-    // its console output so you don't have to reconnect manually.
+    // its console output so you don't have to reconnect manually. If you
+    // click Connect or Flash again before this fires, it gets cancelled.
     els.viewLogsBtn.classList.remove("hidden");
-    setTimeout(startLogStream, 500);
+    autoLogTimer = setTimeout(() => {
+      autoLogTimer = null;
+      startLogStream();
+    }, 500);
   } catch (err) {
     console.error(err);
     logLine(`Error: ${err.message || err}`);
@@ -295,6 +309,11 @@ async function startLogStream() {
     }, () => logStreamClosed);
   } catch (err) {
     if (!logStreamClosed) logLine(`Log stream error: ${err.message || err}`);
+  } finally {
+    // Whether it ran fine and stopped, or failed outright (e.g. the port
+    // was grabbed by a reconnect attempt in the meantime), always leave
+    // the controls in a clean, usable state.
+    await stopLogStream();
   }
 }
 
