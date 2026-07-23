@@ -29,7 +29,21 @@
         <span class="step-num">1</span>
         <h2>Select the firmware file</h2>
       </div>
-      <p class="step-help">Choose the <code>.bin</code> file you were sent.</p>
+      <p class="step-help">Choose the <code>.bin</code> file you were sent, and tell it what kind of file it is.</p>
+
+      <div class="mode-toggle" role="radiogroup" aria-label="Firmware type">
+        <label class="mode-option">
+          <input type="radio" name="flashMode" id="modeFull" value="full" checked />
+          <span class="mode-title">Full firmware</span>
+          <span class="mode-desc">First-time setup. Resets WiFi.</span>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="flashMode" id="modeOta" value="ota" />
+          <span class="mode-title">App update / OTA bin</span>
+          <span class="mode-desc">Keeps WiFi and saved settings.</span>
+        </label>
+      </div>
+
       <label class="file-drop" id="fileDrop" for="fileInput">
         <input type="file" id="fileInput" accept=".bin" hidden />
         <span id="fileLabel">Click to choose a .bin file, or drag it here</span>

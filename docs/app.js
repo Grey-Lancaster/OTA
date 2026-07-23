@@ -5,6 +5,12 @@ const CONFIG = {
   title: "Firmware Flasher by Gramps",
   subtitle: "Flash your device straight from this page. No software to install.",
   footerNote: 'Built with <a href="https://github.com/espressif/esptool-js" target="_blank" rel="noopener">esptool-js</a>.',
+  // Flash address for a full (bootloader + partitions + app) merged image.
+  fullAddress: "0x0",
+  // Flash address for an app-only / OTA-style image. 0x10000 is the default
+  // app offset for the standard ESP32 Arduino partition scheme; change this
+  // if your board uses a different partition table.
+  otaAddress: "0x10000",
 };
 // -------------------------------------------------------------
 
@@ -33,6 +39,8 @@ const els = {
   viewLogsBtn: document.getElementById("viewLogsBtn"),
   resetDeviceBtn: document.getElementById("resetDeviceBtn"),
   stopLogsBtn: document.getElementById("stopLogsBtn"),
+  modeFull: document.getElementById("modeFull"),
+  modeOta: document.getElementById("modeOta"),
 };
 
 let firmwareData = null;
@@ -74,6 +82,25 @@ if (!("serial" in navigator)) {
   els.unsupported.classList.remove("hidden");
   els.app.classList.add("hidden");
 }
+
+// --- Flash mode (full vs. app-only/OTA) ---
+// Switches the default flash address, and keeps "erase entire flash" off
+// and disabled for OTA-style flashes since that would defeat the point
+// of preserving WiFi/NVS.
+function applyFlashMode() {
+  if (els.modeOta.checked) {
+    els.flashAddress.value = CONFIG.otaAddress;
+    els.eraseAll.checked = false;
+    els.eraseAll.disabled = true;
+  } else {
+    els.flashAddress.value = CONFIG.fullAddress;
+    els.eraseAll.disabled = false;
+  }
+}
+
+els.modeFull.addEventListener("change", applyFlashMode);
+els.modeOta.addEventListener("change", applyFlashMode);
+applyFlashMode();
 
 // --- File selection ---
 function handleFile(file) {
