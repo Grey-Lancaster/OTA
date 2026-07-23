@@ -22,6 +22,13 @@
     Open this page in Chrome or Edge and try again.
   </section>
 
+  <section class="banner banner-info">
+    Already got this device on WiFi? Update it at its own address instead (e.g.
+    <code>http://&lt;device-ip&gt;/ota</code>) &mdash; that's safer and keeps your
+    WiFi and settings. Use this page for the first flash, or if the device
+    can't reach WiFi.
+  </section>
+
   <main id="app" class="steps">
 
     <section class="card step">
@@ -35,12 +42,12 @@
         <label class="mode-option">
           <input type="radio" name="flashMode" id="modeFull" value="full" checked />
           <span class="mode-title">Full firmware</span>
-          <span class="mode-desc">First-time setup. Resets WiFi.</span>
+          <span class="mode-desc">Bootloader + app. First-time setup. Resets WiFi.</span>
         </label>
         <label class="mode-option">
           <input type="radio" name="flashMode" id="modeOta" value="ota" />
-          <span class="mode-title">App update / OTA bin</span>
-          <span class="mode-desc">Keeps WiFi and saved settings.</span>
+          <span class="mode-title">App update (OTA)</span>
+          <span class="mode-desc">App-only bin. Keeps WiFi and settings.</span>
         </label>
       </div>
 
@@ -71,7 +78,7 @@
               <option value="921600">921600 (fastest)</option>
             </select>
           </label>
-          <label>
+          <label id="flashAddressRow">
             Flash address
             <input type="text" id="flashAddress" value="0x0" />
           </label>
@@ -80,6 +87,11 @@
             Erase entire flash first
           </label>
         </div>
+        <p id="otaNote" class="step-help hidden" style="margin-top: 10px;">
+          OTA mode writes the app to <code>0x20000</code> and resets the boot
+          slot selector at <code>0xf000</code> so it boots the new app &mdash;
+          the bootloader, partition table, and WiFi settings aren't touched.
+        </p>
       </details>
     </section>
 

@@ -5,12 +5,13 @@ const CONFIG = {
   title: "Firmware Flasher by Gramps",
   subtitle: "Flash your device straight from this page. No software to install.",
   footerNote: 'Built with <a href="https://github.com/espressif/esptool-js" target="_blank" rel="noopener">esptool-js</a>.',
-  // Flash address for a full (bootloader + partitions + app) merged image.
-  fullAddress: "0x0",
-  // Flash address for an app-only / OTA-style image. 0x10000 is the default
-  // app offset for the standard ESP32 Arduino partition scheme; change this
-  // if your board uses a different partition table.
-  otaAddress: "0x10000",
+  // Partition layout for this device's build (shared by both projects).
+  // OTA mode always targets app0 and resets the boot slot selector so it
+  // boots the freshly-written app0, regardless of which slot was active
+  // before. The bootloader, partition table, and NVS (WiFi) are untouched.
+  otaAppAddress: 0x20000,
+  otadataAddress: 0xf000,
+  otadataSize: 0x2000,
 };
 // -------------------------------------------------------------
 
@@ -41,6 +42,8 @@ const els = {
   stopLogsBtn: document.getElementById("stopLogsBtn"),
   modeFull: document.getElementById("modeFull"),
   modeOta: document.getElementById("modeOta"),
+  flashAddressRow: document.getElementById("flashAddressRow"),
+  otaNote: document.getElementById("otaNote"),
 };
 
 let firmwareData = null;
@@ -84,17 +87,18 @@ if (!("serial" in navigator)) {
 }
 
 // --- Flash mode (full vs. app-only/OTA) ---
-// Switches the default flash address, and keeps "erase entire flash" off
-// and disabled for OTA-style flashes since that would defeat the point
-// of preserving WiFi/NVS.
 function applyFlashMode() {
   if (els.modeOta.checked) {
-    els.flashAddress.value = CONFIG.otaAddress;
+    els.flashAddress.value = "0x" + CONFIG.otaAppAddress.toString(16);
+    els.flashAddress.readOnly = true;
     els.eraseAll.checked = false;
     els.eraseAll.disabled = true;
+    els.otaNote.classList.remove("hidden");
   } else {
-    els.flashAddress.value = CONFIG.fullAddress;
+    els.flashAddress.value = "0x0";
+    els.flashAddress.readOnly = false;
     els.eraseAll.disabled = false;
+    els.otaNote.classList.add("hidden");
   }
 }
 
@@ -195,13 +199,15 @@ els.flashBtn.addEventListener("click", async () => {
   els.progressFill.style.width = "0%";
   els.progressLabel.textContent = "0%";
 
+  const otaMode = els.modeOta.checked;
+
   try {
     await esploader.writeFlash({
       fileArray: [{ data: firmwareData, address }],
       flashMode: "keep",
       flashFreq: "keep",
       flashSize: "keep",
-      eraseAll: els.eraseAll.checked,
+      eraseAll: otaMode ? false : els.eraseAll.checked,
       compress: true,
       reportProgress: (fileIndex, written, total) => {
         const percent = Math.round((written / total) * 100);
@@ -209,6 +215,22 @@ els.flashBtn.addEventListener("click", async () => {
         els.progressLabel.textContent = percent + "%";
       },
     });
+
+    if (otaMode) {
+      // App write succeeded. Now reset the boot slot selector so the
+      // bootloader picks up the app we just wrote — done second so an
+      // interrupted app write leaves the old, still-working app bootable.
+      logLine("App written. Resetting boot slot selector...");
+      const blank = new Uint8Array(CONFIG.otadataSize).fill(0xff);
+      await esploader.writeFlash({
+        fileArray: [{ data: blank, address: CONFIG.otadataAddress }],
+        flashMode: "keep",
+        flashFreq: "keep",
+        flashSize: "keep",
+        eraseAll: false,
+        compress: true,
+      });
+    }
 
     logLine("Flash complete. Resetting device...");
     // Force the chip into reset, then release via its proper reset
