@@ -116,6 +116,12 @@ els.connectBtn.disabled = false;
 els.connectBtn.addEventListener("click", async () => {
   try {
     els.connectBtn.disabled = true;
+
+    if (logTransport) {
+      await stopLogStream();
+      els.connectBtn.disabled = true;
+    }
+
     setConnectStatus("Requesting device...");
 
     device = await navigator.serial.requestPort();
