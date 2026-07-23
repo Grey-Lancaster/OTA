@@ -30,12 +30,17 @@ const els = {
   progressLabel: document.getElementById("progressLabel"),
   log: document.getElementById("log"),
   clearLogBtn: document.getElementById("clearLogBtn"),
+  viewLogsBtn: document.getElementById("viewLogsBtn"),
+  resetDeviceBtn: document.getElementById("resetDeviceBtn"),
+  stopLogsBtn: document.getElementById("stopLogsBtn"),
 };
 
 let firmwareData = null;
 let transport = null;
 let esploader = null;
 let device = null;
+let logTransport = null;
+let logStreamClosed = true;
 
 function logLine(str) {
   els.log.textContent += str + "\n";
@@ -173,9 +178,27 @@ els.flashBtn.addEventListener("click", async () => {
     });
 
     logLine("Flash complete. Resetting device...");
-    await esploader.after("hard_reset");
+    // Force the chip into reset, then release via its proper reset
+    // procedure, then close the port. Leaving the port open after
+    // release can leave DTR/RTS parked in a state that keeps some
+    // boards from booting until they're power-cycled.
+    await transport.setRTS(true);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await esploader.after();
+    await transport.disconnect();
+
     logLine("Done! Your device is rebooting.");
     els.progressLabel.textContent = "Done!";
+
+    transport = null;
+    esploader = null;
+    setConnectStatus("Disconnected", "");
+    els.connectBtn.textContent = "Connect Device";
+
+    // Give the board a moment to actually boot, then jump straight to
+    // its console output so you don't have to reconnect manually.
+    els.viewLogsBtn.classList.remove("hidden");
+    setTimeout(startLogStream, 500);
   } catch (err) {
     console.error(err);
     logLine(`Error: ${err.message || err}`);
@@ -183,6 +206,7 @@ els.flashBtn.addEventListener("click", async () => {
   } finally {
     els.flashBtn.disabled = false;
     els.connectBtn.disabled = false;
+    updateFlashButtonState();
   }
 });
 
@@ -190,3 +214,62 @@ els.flashBtn.addEventListener("click", async () => {
 els.clearLogBtn.addEventListener("click", () => {
   els.log.textContent = "";
 });
+
+// --- Device logs ---
+// Reopens the same already-authorized port (no picker dialog) to stream
+// its console output, the way ESP Web Tools' "Logs" step does.
+async function startLogStream() {
+  if (!device) return;
+
+  els.viewLogsBtn.classList.add("hidden");
+  els.resetDeviceBtn.classList.remove("hidden");
+  els.stopLogsBtn.classList.remove("hidden");
+  els.connectBtn.disabled = true;
+
+  try {
+    logTransport = new Transport(device, true);
+    await logTransport.connect(115200);
+    logStreamClosed = false;
+    logTransport.setDeviceLostCallback(() => stopLogStream());
+
+    logLine("--- Viewing device logs (115200 baud) ---");
+    const decoder = new TextDecoder();
+    await logTransport.rawRead((data) => {
+      els.log.textContent += decoder.decode(data);
+      els.log.scrollTop = els.log.scrollHeight;
+    }, () => logStreamClosed);
+  } catch (err) {
+    if (!logStreamClosed) logLine(`Log stream error: ${err.message || err}`);
+  }
+}
+
+async function stopLogStream() {
+  logStreamClosed = true;
+  if (logTransport) {
+    try {
+      await logTransport.disconnect();
+    } catch {
+      // port may already be gone (e.g. device unplugged)
+    }
+    logTransport = null;
+  }
+  els.resetDeviceBtn.classList.add("hidden");
+  els.stopLogsBtn.classList.add("hidden");
+  els.viewLogsBtn.classList.remove("hidden");
+  els.connectBtn.disabled = false;
+}
+
+// Same reset pulse used after flashing: assert EN low, hold briefly, release.
+// Done while the log stream stays open, so the reboot's console output
+// shows up live.
+async function resetDevice() {
+  if (!logTransport) return;
+  logLine("--- Reset ---");
+  await logTransport.setRTS(true);
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await logTransport.setRTS(false);
+}
+
+els.viewLogsBtn.addEventListener("click", startLogStream);
+els.resetDeviceBtn.addEventListener("click", resetDevice);
+els.stopLogsBtn.addEventListener("click", stopLogStream);
