@@ -203,13 +203,21 @@ els.flashBtn.addEventListener("click", async () => {
     return;
   }
 
+  const otaMode = els.modeOta.checked;
+  const confirmMessage = otaMode
+    ? "This is an OTA app update. It only works on a device that already " +
+      "has this firmware's bootloader and partitions set up — it will " +
+      "not boot a brand new/blank device. WiFi and other saved settings " +
+      "are kept if already configured.\n\nContinue?"
+    : "This is a FULL flash. It will erase WiFi and everything else " +
+      "currently on the device.\n\nContinue?";
+  if (!window.confirm(confirmMessage)) return;
+
   els.flashBtn.disabled = true;
   els.connectBtn.disabled = true;
   els.progressWrap.classList.remove("hidden");
   els.progressFill.style.width = "0%";
   els.progressLabel.textContent = "0%";
-
-  const otaMode = els.modeOta.checked;
 
   try {
     await esploader.writeFlash({
