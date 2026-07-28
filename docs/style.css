@@ -389,6 +389,16 @@ body {
   color: var(--accent);
 }
 
+.modal-error-detail {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.modal-error-detail code {
+  word-break: break-word;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

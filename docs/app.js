@@ -48,6 +48,10 @@ const els = {
   noPortCancelBtn: document.getElementById("noPortCancelBtn"),
   noPortRetryBtn: document.getElementById("noPortRetryBtn"),
   linuxDriverNote: document.getElementById("linuxDriverNote"),
+  connectErrorDialog: document.getElementById("connectErrorDialog"),
+  connectErrorDetail: document.getElementById("connectErrorDetail"),
+  connectErrorCancelBtn: document.getElementById("connectErrorCancelBtn"),
+  connectErrorRetryBtn: document.getElementById("connectErrorRetryBtn"),
 };
 
 if (/Linux/.test(navigator.platform || "") && !/Android/.test(navigator.userAgent)) {
@@ -196,8 +200,11 @@ async function connectDevice() {
       setConnectStatus("");
       els.noPortDialog.showModal();
     } else {
+      // A port was selected, but the handshake with the chip failed.
       setConnectStatus(err.message || "Connection failed", "bad");
       logLine(`Error: ${err.message || err}`);
+      els.connectErrorDetail.textContent = err.message || String(err);
+      els.connectErrorDialog.showModal();
     }
   } finally {
     els.connectBtn.disabled = false;
@@ -208,6 +215,11 @@ els.connectBtn.addEventListener("click", connectDevice);
 els.noPortCancelBtn.addEventListener("click", () => els.noPortDialog.close());
 els.noPortRetryBtn.addEventListener("click", () => {
   els.noPortDialog.close();
+  connectDevice();
+});
+els.connectErrorCancelBtn.addEventListener("click", () => els.connectErrorDialog.close());
+els.connectErrorRetryBtn.addEventListener("click", () => {
+  els.connectErrorDialog.close();
   connectDevice();
 });
 

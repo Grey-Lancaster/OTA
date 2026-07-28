@@ -170,6 +170,31 @@
   </div>
 </dialog>
 
+<dialog id="connectErrorDialog" class="modal">
+  <h2>Aw crap, couldn't connect</h2>
+  <p>
+    A port was selected, but the device didn't respond. A few things to try:
+  </p>
+  <ol>
+    <li>
+      Some boards need the <strong>BOOT</strong> (or <strong>FLASH</strong>)
+      button held down while connecting. Hold it, click <strong>Try
+      Again</strong>, and release once the log shows "Connected."
+    </li>
+    <li>
+      Make sure nothing else has the port open &mdash; close the Arduino
+      Serial Monitor, PlatformIO, or any other browser tab using it.
+    </li>
+    <li>Try a slower baud rate under <strong>Advanced options</strong>.</li>
+    <li>Unplug the USB cable, plug it back in, and try again.</li>
+  </ol>
+  <p class="modal-error-detail">Error: <code id="connectErrorDetail"></code></p>
+  <div class="modal-actions">
+    <button id="connectErrorCancelBtn" class="btn btn-ghost">Cancel</button>
+    <button id="connectErrorRetryBtn" class="btn btn-primary">Try Again</button>
+  </div>
+</dialog>
+
 <script type="module" src="app.js"></script>
 </body>
 </html>
