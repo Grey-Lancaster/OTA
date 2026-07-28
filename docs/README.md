@@ -1,5 +1,7 @@
 # Firmware Flasher
 
+**Live page: [grey-lancaster.github.io/OTA](https://grey-lancaster.github.io/OTA/)**
+
 A single-page ESP32 / ESP8266 firmware flasher that runs entirely in the browser
 via the [Web Serial API](https://developer.chrome.com/docs/capabilities/serial) and
 [esptool-js](https://github.com/espressif/esptool-js). No install, no build step —
