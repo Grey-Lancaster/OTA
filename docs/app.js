@@ -44,7 +44,15 @@ const els = {
   modeOta: document.getElementById("modeOta"),
   flashAddressRow: document.getElementById("flashAddressRow"),
   otaNote: document.getElementById("otaNote"),
+  noPortDialog: document.getElementById("noPortDialog"),
+  noPortCancelBtn: document.getElementById("noPortCancelBtn"),
+  noPortRetryBtn: document.getElementById("noPortRetryBtn"),
+  linuxDriverNote: document.getElementById("linuxDriverNote"),
 };
+
+if (/Linux/.test(navigator.platform || "") && !/Android/.test(navigator.userAgent)) {
+  els.linuxDriverNote.classList.remove("hidden");
+}
 
 let firmwareData = null;
 let transport = null;
@@ -152,7 +160,7 @@ els.fileDrop.addEventListener("drop", (e) => {
 els.connectBtn.disabled = false;
 
 // --- Connect ---
-els.connectBtn.addEventListener("click", async () => {
+async function connectDevice() {
   try {
     els.connectBtn.disabled = true;
     cancelAutoLogTimer();
@@ -179,14 +187,28 @@ els.connectBtn.addEventListener("click", async () => {
     updateFlashButtonState();
   } catch (err) {
     console.error(err);
-    setConnectStatus(err.message || "Connection failed", "bad");
-    logLine(`Error: ${err.message || err}`);
     transport = null;
     esploader = null;
     updateFlashButtonState();
+
+    if (err.name === "NotFoundError") {
+      // User closed the port picker without selecting a device.
+      setConnectStatus("");
+      els.noPortDialog.showModal();
+    } else {
+      setConnectStatus(err.message || "Connection failed", "bad");
+      logLine(`Error: ${err.message || err}`);
+    }
   } finally {
     els.connectBtn.disabled = false;
   }
+}
+
+els.connectBtn.addEventListener("click", connectDevice);
+els.noPortCancelBtn.addEventListener("click", () => els.noPortDialog.close());
+els.noPortRetryBtn.addEventListener("click", () => {
+  els.noPortDialog.close();
+  connectDevice();
 });
 
 // --- Flash ---
